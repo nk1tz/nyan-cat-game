@@ -49,7 +49,7 @@ class Explosion {
     this.ctx = ctx;
     this.circles = [];
     this.location = location;
-    for (var i = 0; i < 20000; i++) {
+    for (var i = 0; i < 3000; i++) {
     	this.circles.push(new Circle(location));
     }
   }

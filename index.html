@@ -4,10 +4,40 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link type="text/css" rel="stylesheet" href="css/styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js" integrity="sha256-8E6QUcFg1KTnpEU8TFGhpTGHw5fJqB9vCms3OhAYLqw=" crossorigin="anonymous"></script>
     <title>Exploding Kittens</title>
 </head>
 <body>
-    <div id="app"></div>
+    <div class="main">
+        
+      <div id="scores">
+        <div id="current-score">
+        </div>
+        <h2>Highscores</h2>
+        <div id="highscores">
+        </div>
+      </div>
+    
+      <div id="app"></div>
+      
+      <div class="info">
+        
+    </div>
+    
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/3.7.5/firebase.js"></script>
+    <script>
+      // Initialize Firebase
+      var config = {
+        apiKey: "AIzaSyDjj6O8RaKT4Yux0fw7W1RKm_-y4ICz2_0",
+        authDomain: "i-can-haz-burger.firebaseapp.com",
+        databaseURL: "https://i-can-haz-burger.firebaseio.com",
+        projectId: "i-can-haz-burger",
+        storageBucket: "i-can-haz-burger.appspot.com",
+        messagingSenderId: "173108664069"
+      };
+      firebase.initializeApp(config);
+    </script>
     <script src="js/kittens.js"></script>
 </body>
 </html>

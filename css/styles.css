@@ -2,9 +2,32 @@ body {
   background: black;
 }
 
-#app {
+.main {
   display: flex;
   justify-content: center;
-  align-items: center;
+  /*align-items: center;*/
+}
+
+#app {
   
+}
+
+#scores h2{
+  color: white;
+  text-align: center;
+}
+
+#highscores {
+  min-width: 200px;
+  max-width: 300px;
+}
+
+#highscores div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#highscores p {
+  color: white;
 }

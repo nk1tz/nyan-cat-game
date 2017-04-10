@@ -1,22 +1,68 @@
 // This sectin contains some game constants. It is not super interesting
-var GAME_WIDTH = 1050;
-var GAME_HEIGHT = 800;
+const GAME_WIDTH = 1050;
+const GAME_HEIGHT = 800;
 
-var ENEMY_WIDTH = 75;
-var ENEMY_HEIGHT = 156;
-var MAX_ENEMIES = 9;
+const ENEMY_WIDTH = 75;
+const ENEMY_HEIGHT = 156;
+const MAX_ENEMIES = 9;
 
-var PLAYER_WIDTH = 75;
-var PLAYER_HEIGHT = 54;
+const PLAYER_WIDTH = 75;
+const PLAYER_HEIGHT = 54;
 
 // These two constants keep us from using "magic numbers" in our code
-var LEFT_ARROW_CODE = 37;
-var RIGHT_ARROW_CODE = 39;
-var ENTER_KEY = 13;
+const LEFT_ARROW_CODE = 37;
+const RIGHT_ARROW_CODE = 39;
+const UP_ARROW_CODE = 38;
+const DOWN_ARROW_CODE = 40;
+const ENTER_KEY = 13;
 
 // These two constants allow us to DRY
-var MOVE_LEFT = 'left';
-var MOVE_RIGHT = 'right';
+const MOVE_LEFT = 'left';
+const MOVE_RIGHT = 'right';
+const MOVE_UP = 'up';
+const MOVE_DOWN = 'down';
+
+const PLAYER_SPEED = 0.75;
+
+var highscoresRef = firebase.database().ref('highscores')
+var highscoresArray = [];
+
+fetchHighscores();
+
+function fetchHighscores() {
+  highscoresRef.orderByChild("score").limitToLast(10).once('value').then(highscores => {
+    var highscoresNode = document.getElementById("highscores");
+    while (highscoresNode.firstChild) {
+      highscoresNode.removeChild(highscoresNode.firstChild);
+    }
+    highscores.forEach(hs => {
+      highscoresArray.push(hs.val().score);
+      prependChild(highscoresNode, createScoreNode(hs.val()));
+    })
+  })
+}
+
+highscoresRef.on('child_added', function(highscores) {
+  fetchHighscores()
+});
+
+function prependChild(parent, newFirstChild) {
+    parent.insertBefore(newFirstChild, parent.firstChild)
+}
+
+function createScoreNode(scoreObj) {
+  var newDiv = document.createElement("div");
+  var userName = document.createElement("p");
+  var score = document.createElement("p");
+  
+  userName.appendChild(document.createTextNode(scoreObj.username));
+  score.appendChild(document.createTextNode(scoreObj.score));
+  
+  newDiv.appendChild(userName);
+  newDiv.appendChild(score);
+  
+  return newDiv;
+}
 
 // Preload game images
 var images = {};
@@ -26,6 +72,15 @@ var images = {};
     images[imgName] = img;
 });
 
+function saveHighscore(score) {
+  var username = window.prompt("You got a highscore, please enter your name!")
+  if (username != null) {
+    highscoresRef.push({
+      username: username,
+      score: score
+    });
+  }
+}
 
 
 class Circle {
@@ -49,7 +104,7 @@ class Explosion {
     this.ctx = ctx;
     this.circles = [];
     this.location = location;
-    for (var i = 0; i < 3000; i++) {
+    for (var i = 0; i < 1000; i++) {
     	this.circles.push(new Circle(location));
     }
   }
@@ -100,8 +155,7 @@ class Enemy extends Entity {
         this.sprite = images['enemy.png'];
 
         // Each enemy should have a different speed
-        console.log(difficulty)
-        this.speed = (Math.random() + 0.1) + this.difficulty/5000// 2 + 0.25;
+        this.speed = (Math.random() + 0.1) + this.difficulty/10000// 2 + 0.25;
     }
 
     update(timeDiff) {
@@ -115,17 +169,35 @@ class Player extends Entity {
         this.x = 5 * PLAYER_WIDTH;
         this.y = GAME_HEIGHT - PLAYER_HEIGHT - 10;
         this.sprite = images['player.png'];
+        this.velocity = [0, 0, 0, 0];
+    }
+    
+    update(timeDiff) {
+      console.log(timeDiff)
+      var diagonal = _.findLastIndex(this.velocity, v => v!==0) !== _.findIndex(this.velocity, v => v!== 0)
+      if (this.velocity[1] && this.x < GAME_WIDTH - PLAYER_WIDTH) {
+        this.x = this.x + (timeDiff*this.velocity[1]*PLAYER_SPEED * (diagonal?0.77:1));
+      }
+      if (this.velocity[3] && this.x > 0) {
+        this.x = this.x - (timeDiff*this.velocity[3]*PLAYER_SPEED * (diagonal?0.77:1));
+      }
+      if (this.velocity[0] && this.y > 0 + 10) {
+        this.y = this.y - (timeDiff*this.velocity[0]*PLAYER_SPEED * (diagonal?0.77:1));
+      }
+      if (this.velocity[2] && this.y < GAME_HEIGHT - PLAYER_HEIGHT - 20) {
+        this.y = this.y + (timeDiff*this.velocity[2]*PLAYER_SPEED * (diagonal?0.77:1));
+      }
     }
 
     // This method is called by the game engine when left/right arrows are pressed
-    move(direction) {
-        if (direction === MOVE_LEFT && this.x > 0) {
-            this.x = this.x - PLAYER_WIDTH;
-        }
-        else if (direction === MOVE_RIGHT && this.x < GAME_WIDTH - PLAYER_WIDTH) {
-            this.x = this.x + PLAYER_WIDTH;
-        }
-    }
+    // move(direction) {
+    //     if (direction === MOVE_LEFT && this.x > 0) {
+    //         this.x = this.x - 10;
+    //     }
+    //     else if (direction === MOVE_RIGHT && this.x < GAME_WIDTH - PLAYER_WIDTH) {
+    //         this.x = this.x + 10;
+    //     }
+    // }
 
 }
 
@@ -147,16 +219,37 @@ class Engine {
         this.setupEnemies();
         
         // Event Listeners
-        
-        document.addEventListener('keydown', e => {
+        document.addEventListener('keypress', e => {
           if (e.keyCode === ENTER_KEY && this.canStart) {
             this.start()
           }
-          if (e.keyCode === LEFT_ARROW_CODE) {
-            this.player.move(MOVE_LEFT)
+        })
+        document.addEventListener('keydown', e => {
+          if (e.keyCode === UP_ARROW_CODE) {
+            this.player.velocity[0] = 1;
           }
           if (e.keyCode === RIGHT_ARROW_CODE) {
-            this.player.move(MOVE_RIGHT)
+            this.player.velocity[1] = 1;
+          }
+          if (e.keyCode === DOWN_ARROW_CODE) {
+            this.player.velocity[2] = 1;
+          }
+          if (e.keyCode === LEFT_ARROW_CODE) {
+            this.player.velocity[3] = 1;
+          }
+        })
+        document.addEventListener('keyup', e => {
+          if (e.keyCode === UP_ARROW_CODE) {
+            this.player.velocity[0] = 0;
+          }
+          if (e.keyCode === RIGHT_ARROW_CODE) {
+            this.player.velocity[1] = 0;
+          }
+          if (e.keyCode === DOWN_ARROW_CODE) {
+            this.player.velocity[2] = 0;
+          }
+          if (e.keyCode === LEFT_ARROW_CODE) {
+            this.player.velocity[3] = 0;
           }
         })
 
@@ -191,23 +284,28 @@ class Engine {
     addEnemy() {
         var enemySpots = GAME_WIDTH / ENEMY_WIDTH;
 
-        var enemySpot;
+        this.enemies.push(new Enemy(Math.floor(Math.random() * (GAME_WIDTH - ENEMY_WIDTH + 1)), this.score))
+        // var enemySpot;
         // Keep looping until we find a free enemy spot at random
         // || this.enemies[enemySpot]
-        while (enemySpot===undefined ) {
-            enemySpot = Math.floor(Math.random() * enemySpots);
-        }
-        var firstEmptySlot = this.enemies.findIndex(e=>!e)
-        if (firstEmptySlot >= 0) {
-          this.enemies[firstEmptySlot] = new Enemy(enemySpot * ENEMY_WIDTH, this.score);
-        }
-        else {
-          this.enemies.push(new Enemy(enemySpot * ENEMY_WIDTH, this.score))
-        }
+        // while (enemySpot===undefined ) {
+        //     enemySpot = Math.floor(Math.random() * enemySpots);
+        // }
+        // var firstEmptySlot = this.enemies.findIndex(e=>!e)
+        // if (firstEmptySlot >= 0) {
+        //   this.enemies[firstEmptySlot] = new Enemy(enemySpot * ENEMY_WIDTH, this.score);
+        // }
+        // else {
+        //   this.enemies.push(new Enemy(enemySpot * ENEMY_WIDTH, this.score))
+        // }
+        
     }
 
     // This method kicks off the game
     start() {
+        this.enemies = [];
+        this.player.x = 5 * PLAYER_WIDTH;
+        this.player.y = GAME_HEIGHT - PLAYER_HEIGHT - 10;
         this.canStart = false
         this.score = 0;
         this.lastFrame = Date.now();
@@ -220,14 +318,11 @@ class Engine {
       this.player.render(this.ctx);
       this.ctx.font = 'bold 30px Impact';
       this.ctx.fillStyle = '#ffffff';
-      this.ctx.textAlign = "center";
-      this.ctx.fillText('Press Enter to play', GAME_WIDTH/2, GAME_HEIGHT/2);
+      this.ctx.fillText('Press Enter to play', GAME_WIDTH/2.5, GAME_HEIGHT/2);
       requestAnimationFrame(()=>this.loadGameStartScreen())
     }
     
     explodePlayer() {
-      this.canStart = false
-      
       var oldX = this.player.x;
       var oldY = this.player.y;
       this.player.x = -1000;
@@ -254,7 +349,7 @@ class Engine {
       this.ctx.font = 'bold 30px Impact';
       this.ctx.fillStyle = '#ffffff';
       this.ctx.fillText(this.score, 5, 30);
-      this.ctx.fillText('GAME OVER', GAME_WIDTH/2, GAME_HEIGHT/2);
+      this.ctx.fillText('GAME OVER - press enter to play again', GAME_WIDTH/3.3, GAME_HEIGHT/2);
       
       // Check if any enemies should die
       this.enemies.forEach((enemy, enemyIdx) => {
@@ -263,9 +358,11 @@ class Engine {
           }
       });
       // this.setupEnemies();
+      if (this.canStart) {
+        this.lastFrame = Date.now();
+        requestAnimationFrame(()=>this.explosionLoop())
+      }
       
-      this.lastFrame = Date.now();
-      requestAnimationFrame(()=>this.explosionLoop())
     }
 
     /*
@@ -288,6 +385,9 @@ class Engine {
 
         // Call update on all enemies
         this.enemies.forEach(enemy => enemy.update(timeDiff));
+        
+        // Update player
+        this.player.update(timeDiff)
 
         // Draw everything!
         this.ctx.drawImage(images['stars.jpg'], 0, 0); // draw the star bg
@@ -300,12 +400,16 @@ class Engine {
                 delete this.enemies[enemyIdx];
             }
         });
+        
         this.setupEnemies();
-
         // Check if player is dead
         if (this.isPlayerDead()) {
           // If they are dead, then it's game over!
+          this.canStart = true;
           this.explodePlayer()
+          if (this.score > highscoresArray[0]) {
+            saveHighscore(this.score)
+          }
         }
         else {
             // If player is not dead, then draw the score
@@ -324,13 +428,19 @@ class Engine {
         for (var i = 0; i < this.enemies.length; i++) {
             // check if enemy overlaps with player
             if (this.enemies[i]
-                && this.enemies[i].x == this.player.x
-                && this.enemies[i].y + ENEMY_HEIGHT*0.80 > this.player.y
-                && this.enemies[i].y + ENEMY_HEIGHT*0.2 < this.player.y ) {
+                && this.enemies[i].x < this.player.x + PLAYER_WIDTH - 0.2 * PLAYER_WIDTH
+                && this.enemies[i].x + ENEMY_WIDTH > this.player.x + 0.2 * PLAYER_WIDTH
+                && this.enemies[i].y + ENEMY_HEIGHT*0.6 > this.player.y
+                && this.enemies[i].y + ENEMY_HEIGHT*0.5 < this.player.y + PLAYER_HEIGHT
+            ) {
                 return true
             }
         }
         return false;
+    }
+    
+    detectCollision(entity1, entity2) {
+      
     }
 }
 

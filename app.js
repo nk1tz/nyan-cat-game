@@ -24,45 +24,7 @@ const MOVE_DOWN = 'down';
 
 const PLAYER_SPEED = 0.75;
 
-var highscoresRef = firebase.database().ref('highscores')
-var highscoresArray = [];
-
-fetchHighscores();
-
-function fetchHighscores() {
-  highscoresRef.orderByChild("score").limitToLast(10).once('value').then(highscores => {
-    var highscoresNode = document.getElementById("highscores");
-    while (highscoresNode.firstChild) {
-      highscoresNode.removeChild(highscoresNode.firstChild);
-    }
-    highscores.forEach(hs => {
-      highscoresArray.push(hs.val().score);
-      prependChild(highscoresNode, createScoreNode(hs.val()));
-    })
-  })
-}
-
-highscoresRef.on('child_added', function(highscores) {
-  fetchHighscores()
-});
-
-function prependChild(parent, newFirstChild) {
-    parent.insertBefore(newFirstChild, parent.firstChild)
-}
-
-function createScoreNode(scoreObj) {
-  var newDiv = document.createElement("div");
-  var userName = document.createElement("p");
-  var score = document.createElement("p");
-  
-  userName.appendChild(document.createTextNode(scoreObj.username));
-  score.appendChild(document.createTextNode(scoreObj.score));
-  
-  newDiv.appendChild(userName);
-  newDiv.appendChild(score);
-  
-  return newDiv;
-}
+console.log(window.a)
 
 // Preload game images
 var images = {};
@@ -71,17 +33,6 @@ var images = {};
     img.src = 'images/' + imgName;
     images[imgName] = img;
 });
-
-function saveHighscore(score) {
-  var username = window.prompt("You got a highscore, please enter your name!")
-  if (username != null) {
-    highscoresRef.push({
-      username: username,
-      score: score
-    });
-  }
-}
-
 
 class Circle {
   constructor(location) {
@@ -108,22 +59,22 @@ class Explosion {
     	this.circles.push(new Circle(location));
     }
   }
-  
+
   render() {
   	//Fill the canvas with circles
   	for(var j = 0; j < this.circles.length; j++){
   		var c = this.circles[j];
-  		
+
   		//Create the circles
   		this.ctx.beginPath();
   		this.ctx.arc(c.x, c.y, c.radius, 0, Math.PI*2, false);
       this.ctx.fillStyle = "rgba("+c.r+", "+c.g+", "+c.b+", 0.9)";
   		this.ctx.fill();
-  		
+
   		c.x += c.vx;
   		c.y += c.vy;
   		c.radius -= .02;
-  		
+
   		if(c.radius < 2 + Math.random()* 0.1) {
         if (Math.random() < 0.05) {
           this.circles[j] = new Circle(this.location)
@@ -132,17 +83,17 @@ class Explosion {
           this.circles.splice(j, 1);
         }
       }
-      
+
   	}
   }
-  
+
 }
 
 
 // This section is where you will be doing most of your coding
 class Entity {
   render(ctx) {
-      ctx.drawImage(this.sprite, this.x, this.y);
+    ctx.drawImage(this.sprite, this.x, this.y);
   }
 }
 
@@ -171,7 +122,7 @@ class Player extends Entity {
         this.sprite = images['player.png'];
         this.velocity = [0, 0, 0, 0];
     }
-    
+
     update(timeDiff) {
       console.log(timeDiff)
       var diagonal = _.findLastIndex(this.velocity, v => v!==0) !== _.findIndex(this.velocity, v => v!== 0)
@@ -211,13 +162,13 @@ class Engine {
     constructor(element) {
         // Setup the player
         this.player = new Player();
-        
+
         this.canStart = true
         this.score = 1;
 
         // Setup enemies, making sure there are always three
         this.setupEnemies();
-        
+
         // Event Listeners
         document.addEventListener('keypress', e => {
           if (e.keyCode === ENTER_KEY && this.canStart) {
@@ -254,11 +205,10 @@ class Engine {
         })
 
         // Setup the <canvas> element where we will be drawing
-        var canvas = document.createElement('canvas');
+        var canvas = window.a
         canvas.id = "canvas";
         canvas.width = GAME_WIDTH;
         canvas.height = GAME_HEIGHT;
-        element.appendChild(canvas);
 
         this.ctx = canvas.getContext('2d');
 
@@ -298,7 +248,7 @@ class Engine {
         // else {
         //   this.enemies.push(new Enemy(enemySpot * ENEMY_WIDTH, this.score))
         // }
-        
+
     }
 
     // This method kicks off the game
@@ -312,7 +262,7 @@ class Engine {
 
         this.gameLoop();
     }
-    
+
     loadGameStartScreen() {
       this.ctx.drawImage(images['stars.jpg'], 0, 0)
       this.player.render(this.ctx);
@@ -321,22 +271,22 @@ class Engine {
       this.ctx.fillText('Press Enter to play', GAME_WIDTH/2.5, GAME_HEIGHT/2);
       requestAnimationFrame(()=>this.loadGameStartScreen())
     }
-    
+
     explodePlayer() {
       var oldX = this.player.x;
       var oldY = this.player.y;
       this.player.x = -1000;
       this.player.y = -1000;
-      
+
       this.explosion = new Explosion({ x: oldX, y: oldY }, this.ctx);
       this.explosionLoop();
     }
-    
+
     explosionLoop() {
       // Check how long it's been since last frame
       var currentFrame = Date.now();
       var timeDiff = currentFrame - this.lastFrame;
-      
+
       // Call update on all enemies
       this.enemies.forEach(enemy => enemy.update(timeDiff));
 
@@ -345,12 +295,12 @@ class Engine {
       this.enemies.forEach(enemy => enemy.render(this.ctx)); // draw the enemies
       this.player.render(this.ctx); // draw the player
       this.explosion.render();
-      
+
       this.ctx.font = 'bold 30px Impact';
       this.ctx.fillStyle = '#ffffff';
       this.ctx.fillText(this.score, 5, 30);
       this.ctx.fillText('GAME OVER - press enter to play again', GAME_WIDTH/3.3, GAME_HEIGHT/2);
-      
+
       // Check if any enemies should die
       this.enemies.forEach((enemy, enemyIdx) => {
           if (enemy.y > GAME_HEIGHT) {
@@ -362,7 +312,7 @@ class Engine {
         this.lastFrame = Date.now();
         requestAnimationFrame(()=>this.explosionLoop())
       }
-      
+
     }
 
     /*
@@ -385,7 +335,7 @@ class Engine {
 
         // Call update on all enemies
         this.enemies.forEach(enemy => enemy.update(timeDiff));
-        
+
         // Update player
         this.player.update(timeDiff)
 
@@ -393,23 +343,20 @@ class Engine {
         this.ctx.drawImage(images['stars.jpg'], 0, 0); // draw the star bg
         this.enemies.forEach(enemy => enemy.render(this.ctx)); // draw the enemies
         this.player.render(this.ctx); // draw the player
-        
+
         // Check if any enemies should die
         this.enemies.forEach((enemy, enemyIdx) => {
             if (enemy.y > GAME_HEIGHT) {
                 delete this.enemies[enemyIdx];
             }
         });
-        
+
         this.setupEnemies();
         // Check if player is dead
         if (this.isPlayerDead()) {
           // If they are dead, then it's game over!
           this.canStart = true;
           this.explodePlayer()
-          if (this.score > highscoresArray[0]) {
-            saveHighscore(this.score)
-          }
         }
         else {
             // If player is not dead, then draw the score
@@ -423,7 +370,7 @@ class Engine {
             requestAnimationFrame(this.gameLoop);
         }
     }
-    
+
     isPlayerDead() {
         for (var i = 0; i < this.enemies.length; i++) {
             // check if enemy overlaps with player
@@ -438,9 +385,9 @@ class Engine {
         }
         return false;
     }
-    
+
     detectCollision(entity1, entity2) {
-      
+
     }
 }
 

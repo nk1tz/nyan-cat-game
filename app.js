@@ -13,37 +13,37 @@ let GW = 1050,
   a.width = GW;
   a.height = GH;
 
-function Circle(loc) {
-  this.x = loc.x + PW/2;
-  this.y = loc.y + PH/2;
-  this.radius = 2 + r()*5;
-  this.vx = -5 + r()*10;
-  this.vy = -5 + r()*10;
-  this.r = ro(r())*255;
-  this.g = ro(r())*255;
-  this.b = ro(r())*255;
-}
+  const Circle = loc => ({
+    x: loc.x + PW/2,
+    y: loc.y + PH/2,
+    radius: 2 + r()*5,
+    vx: -5 + r()*10,
+    vy: -5 + r()*10,
+    r: ro(r())*255,
+    g: ro(r())*255,
+    b: ro(r())*255,
+  })
 
 function Explosion(loc) {
   this.circles = [];
   this.loc = loc;
   for (i = 0; i < 1000; i++) {
-    this.circles.push(new Circle(loc));
+    this.circles.push(Circle(loc));
   }
   this.render = function() {
     shadowBlur(2);
   	for (i = 0; i < this.circles.length; i++){
-  		let c = this.circles[i];
+  		let circ = this.circles[i];
   		c.beginPath();
-  		c.arc(c.x, c.y, c.radius, 0, Math.PI*2, false);
-      c.fillStyle = "rgba("+c.r+", "+c.g+", "+c.b+", 0.9)";
+  		c.arc(circ.x, circ.y, circ.radius, 0, Math.PI*2, false);
+      c.fillStyle = "rgba("+circ.r+", "+circ.g+", "+circ.b+", 0.9)";
   		c.fill();
-  		c.x += c.vx;
-  		c.y += c.vy;
-  		c.radius -= .02;
-  		if(c.radius < 2 + r()* 0.1) {
+  		circ.x += circ.vx;
+  		circ.y += circ.vy;
+  		circ.radius -= .02;
+  		if(circ.radius < 2 + r()* 0.1) {
         (r() < 0.05)
-        ? this.circles[i] = new Circle(this.loc)
+        ? this.circles[i] = Circle(this.loc)
         : this.circles.splice(i, 1)
       }
   	}
@@ -58,7 +58,7 @@ function Enemy(xPos, diff) {
   this.update = function(timeDiff) {
     this.y = this.y + timeDiff * this.speed;
     shadowBlur(30);
-    c.shadowColor = "black";
+    c.shadowColor = "#000";
     c.fillStyle = 'red';
     c.fillRect(this.x, this.y, EW, EH);
   }
@@ -89,7 +89,7 @@ let enemies = [],
       ? this.y = y + (timeDiff*v[2]*PS * d)
       : 0;
       shadowBlur(30);
-      c.shadowColor = "black";
+      c.shadowColor = "#000";
       c.fillStyle = 'green';
       c.fillRect(x, y, PW, PH);
     }
@@ -110,17 +110,12 @@ let enemies = [],
     c.fillText(score, 5, 30);
   },
   shadowBlur = blur => c.shadowBlur = blur,
-  isPlayerDead = () => {
-    for (i = 0; i < enemies.length; i++) {
-      if (enemies[i]
-        && enemies[i].x < player.x + PW - 0.2 * PW
-        && enemies[i].x + EW > player.x + 0.2 * PW
-        && enemies[i].y + EH*0.8 > player.y
-        && enemies[i].y + EH*0.5 < player.y + PH
-      ) return true;
-    }
-    return 0
-  },
+  isPlayerDead = () => enemies.some(e =>
+    e.x < player.x + PW - 0.2 * PW &&
+    e.x + EW > player.x + 0.2 * PW &&
+    e.y + EH*0.8 > player.y &&
+    e.y + EH*0.5 < player.y + PH
+  ),
   start = () => {
     enemies = [];
     player = {
@@ -134,17 +129,18 @@ let enemies = [],
     lastFrame = Date.now();
     gameLoop();
   },
+  updateTimeDiff = () => timeDiff = Date.now() - lastFrame,
   explosionLoop = () => {
-    timeDiff = Date.now() - lastFrame;
+    updateTimeDiff();
     updateEnemies();
     explosion.render();
-    drawText('GAME OVER - press enter to play again');
+    drawText('GAME OVER - press enter');
     drawScore();
     lastFrame = Date.now();
     canStart ? requestAnimationFrame(explosionLoop) : 0;
   },
   gameLoop = () => {
-    timeDiff = Date.now() - lastFrame;
+    updateTimeDiff();
     score += ro(timeDiff/10);
     drawBackground();
     while (enemies.filter(e => !!e).length < ME) {addEnemy()};
@@ -164,8 +160,8 @@ let enemies = [],
   addEnemy = () => enemies.push(new Enemy(Math.floor(r() * (GW - EW + 1)), score, c));
 
 onkeydown = ({ keyCode: k }) => {
-  let aa = k==38? 0 : k==39? 1 : k==40? 2 : k==37? 3 : -1;
-  aa > -1 ? player.v[aa] = 1 : 0;
+  let dir = k==38? 0 : k==39? 1 : k==40? 2 : k==37? 3 : -1;
+  dir > -1 ? player.v[dir] = 1 : 0;
 };
 
 onkeypress = ({ keyCode: k }) => {
@@ -173,10 +169,10 @@ onkeypress = ({ keyCode: k }) => {
 };
 
 onkeyup = ({ keyCode: k }) => {
-  let aa = k==38? 0 : k==39? 1 : k==40? 2 : k==37? 3 : -1;
-  aa > -1 ? player.v[aa] = 0 : 0;
+  let dir = k==38? 0 : k==39? 1 : k==40? 2 : k==37? 3 : -1;
+  dir > -1 ? player.v[dir] = 0 : 0;
 };
 
 drawBackground();
 player.update();
-drawText('Press Enter to play');
+drawText('Press Enter');

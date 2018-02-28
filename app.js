@@ -8,11 +8,11 @@ const GW = 1050,
   PH = 54,
   PS = 0.75,
   r = Math.random,
-  ro = Math.round,
-  canvas = window.a;
+  ro = Math.round;
 
-canvas.width = GW;
-canvas.height = GH;
+
+a.width = GW;
+a.height = GH;
 
 class Circle {
   constructor(loc) {
@@ -80,7 +80,7 @@ let enemies = [],
   currentFrame,
   lastFrame = Date.now(),
   timeDiff,
-  ctx = canvas.getContext('2d'),
+  ctx = a.getContext('2d'),
   canStart = 1,
   explosion,
   player = {
@@ -182,8 +182,8 @@ onkeypress = ({ keyCode: k }) => {
 };
 
 onkeyup = ({ keyCode: k }) => {
-  let a = k==38? 0 : k==39? 1 : k==40? 2 : k==37? 3 : -1;
-  a > -1 ? player.v[a] = 0 : 0;
+  let aa = k==38? 0 : k==39? 1 : k==40? 2 : k==37? 3 : -1;
+  aa > -1 ? player.v[aa] = 0 : 0;
 };
 
 drawBackground();

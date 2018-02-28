@@ -5,16 +5,7 @@ let GW = 1050,
   m = Math,
   r = m.random,
   ro = m.round,
-  Circle = (x,y) => ({
-    x: x + 74/2,
-    y: y + 54/2,
-    radius: 2 + r()*5,
-    vx: -5 + r()*10,
-    vy: -5 + r()*10,
-    r: ro(r())*255,
-    g: ro(r())*255,
-    b: ro(r())*255,
-  }),
+  circles,
   Enemy = () => ({
     x: m.floor(r()*(GW-EW+1)),
     y:-EH,
@@ -46,10 +37,19 @@ let GW = 1050,
   lastFrame = date(),
   timeDiff,
   canStart = 1,
-  circles = [],
   k = [0],
   x = 370,
   y = GH - 64,
+  Circle = () => ({
+    x: x + 74/2,
+    y: y + 54/2,
+    radius: 2 + r()*5,
+    vx: -5 + r()*10,
+    vy: -5 + r()*10,
+    r: ro(r())*255,
+    g: ro(r())*255,
+    b: ro(r())*255,
+  }),
   updatePlayer = () => {
     let s = timeDiff*(k.reduce((acc, z) => z+acc) > 1 ? 0.58 : 0.77);
     (k[39] && x < GW - 74)
@@ -102,7 +102,7 @@ let GW = 1050,
       if (!enemies[8]) addEnemy();
       updatePlayer();
       if (isPlayerDead()) {
-        circles = Array(1000).fill().map(z=>Circle(x,y));
+        circles = Array(700).fill().map(z=>Circle());
         canStart = 1;
       }
     } else {

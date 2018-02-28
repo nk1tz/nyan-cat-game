@@ -15,6 +15,30 @@ let GW = 1050,
     g: ro(r())*255,
     b: ro(r())*255,
   }),
+  Enemy = () => ({
+    x: m.floor(r()*(GW-EW+1)),
+    y:-EH,
+    speed: (r() + 0.1) + score/10000,
+    update: function(){
+      this.y = this.y + timeDiff * this.speed;
+      fS('#d01');
+      c.fillRect(this.x, this.y, EW, EH);
+    }
+  }),
+  updateExplosion = () => {
+    for (i = 0; i < circles.length; i++){
+      let circ = circles[i];
+      c.beginPath();
+      c.arc(circ.x, circ.y, circ.radius, 0, m.PI*2, false);
+      fS(`rgba(${circ.r}, ${circ.g}, ${circ.b}, 0.9)`);
+      c.fill();
+      circ.x += circ.vx;
+      circ.y += circ.vy;
+      circ.radius -= .02;
+      if(circ.radius < 2 + r()* 0.1)
+        r() < 0.05 ? circles[i] = Circle(x,y) : circles.splice(i, 1)
+    }
+  },
   fS = o => c.fillStyle = o,
   enemies = [],
   score = 0,
@@ -22,6 +46,7 @@ let GW = 1050,
   lastFrame = date(),
   timeDiff,
   canStart = 1,
+  circles = [],
   k = [0],
   x = 370,
   y = GH - 64,
@@ -37,12 +62,10 @@ let GW = 1050,
     : (k[40] && y < GH - 74)
     ? y += s
     : 0;
-    shadowBlur(30);
     fS('#1cb');
     c.fillRect(x, y, 74, 54);
   },
   drawBackground = () => {
-    shadowBlur(0);
     fS('#ccc');
     c.fillRect(0, 0, GW, GH);
   },
@@ -65,73 +88,36 @@ let GW = 1050,
   ),
   start = () => {
     enemies = [];
+    circles = [];
     canStart = 0;
     score = 0;
-    lastFrame = date();
     gameLoop();
   },
   updateTimeDiff = () => timeDiff = date() - lastFrame,
-  explosionLoop = () => {
-    updateTimeDiff();
-    updateEnemies();
-    explosion.render();
-    drawText('GAME OVER - press enter');
-    drawScore();
-    lastFrame = date();
-    canStart ? requestAnimationFrame(explosionLoop) : 0;
-  },
   gameLoop = () => {
     updateTimeDiff();
-    score += ro(timeDiff/10);
-    drawBackground();
-    if (!enemies[8]) addEnemy();
-    updateEnemies();
-    lastFrame = date();
-    drawScore();
-    if (isPlayerDead()) {
-      explosion = new Explosion;
-      canStart = 1;
-      explosionLoop()
-    } else {
+    if (!canStart) {
+      score += ro(timeDiff/10);
+      drawBackground();
+      if (!enemies[8]) addEnemy();
       updatePlayer();
-      requestAnimationFrame(gameLoop);
+      if (isPlayerDead()) {
+        circles = Array(1000).fill().map(z=>Circle(x,y));
+        canStart = 1;
+      }
+    } else {
+      shadowBlur(0);
+      updateExplosion();
+      drawText('GAME OVER - press enter');
     }
-  },
-  updateEnemies = () => enemies.forEach((e, i) => e.y > GH ? enemies.splice(i,1) : e.update(timeDiff)),
-  addEnemy = () => enemies.push(new Enemy(m.floor(r() * (GW - EW + 1)), score));
-
-function Explosion() {
-  let circles = [];
-  for (i = 0; i < 1000; i++) {
-    circles.push(Circle(x,y));
-  }
-  this.render = () => {
-    shadowBlur(2);
-  	for (i = 0; i < circles.length; i++){
-  		let circ = circles[i];
-  		c.beginPath();
-      c.arc(circ.x, circ.y, circ.radius, 0, m.PI*2, false);
-      fS(`rgba(${circ.r}, ${circ.g}, ${circ.b}, 0.9)`);
-  		c.fill();
-  		circ.x += circ.vx;
-  		circ.y += circ.vy;
-  		circ.radius -= .02;
-  		if(circ.radius < 2 + r()* 0.1)
-        r() < 0.05 ? circles[i] = Circle(x,y) : circles.splice(i, 1)
-  	}
-  }
-}
-function Enemy(xPos, diff) {
-  this.x = xPos;
-  this.y = -EH;
-  this.speed = (r() + 0.1) + diff/10000;
-  this.update = function(timeDiff) {
-    this.y = this.y + timeDiff * this.speed;
     shadowBlur(30);
-    fS('#d01');
-    c.fillRect(this.x, this.y, EW, EH);
-  }
-}
+    updateEnemies();
+    drawScore();
+    lastFrame = date();
+    requestAnimationFrame(gameLoop);
+  },
+  updateEnemies = () => enemies.forEach((e, i) => e.y > GH ? enemies.splice(i,1) : e.update()),
+  addEnemy = () => enemies.push(Enemy());
 onkeydown = ({which:w}) => w == 13 && canStart ? start() : k[w]=1;
 onkeyup = x => k[x.which]=0;
 a.width = GW;

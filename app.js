@@ -2,7 +2,6 @@ let GW = 1050,
   GH = 800,
   EW = 75,
   EH = 156,
-  PS = 0.75,
   m = Math,
   r = m.random,
   ro = m.round,
@@ -16,6 +15,7 @@ let GW = 1050,
     g: ro(r())*255,
     b: ro(r())*255,
   }),
+  fS = o => c.fillStyle = o,
   enemies = [],
   score = 0,
   date = Date.now,
@@ -25,39 +25,35 @@ let GW = 1050,
   k = [0],
   x = 370,
   y = GH - 64,
-  player = {
-    update: function() {
-      d = k.reduce((acc, z) => z+acc) > 1 ? 0.77 : 1;
-      console.log(d);
-      (k[39] && x < GW - 74)
-      ? x += (timeDiff*PS * d)
-      : (k[37] && x > 0)
-      ? x -= (timeDiff*PS * d)
-      : 0;
-      (k[38] && y > 10)
-      ? y -= (timeDiff*PS * d)
-      : (k[40] && y < GH - 74)
-      ? y += (timeDiff*PS * d)
-      : 0;
-      shadowBlur(30);
-      c.shadowColor = "#000";
-      c.fillStyle = '#1cb';
-      c.fillRect(x, y, 74, 54);
-    }
+  updatePlayer = () => {
+    s = timeDiff*(k.reduce((acc, z) => z+acc) > 1 ? 0.58 : 0.77);
+    (k[39] && x < GW - 74)
+    ? x += s
+    : (k[37] && x > 0)
+    ? x -= s
+    : 0;
+    (k[38] && y > 10)
+    ? y -= s
+    : (k[40] && y < GH - 74)
+    ? y += s
+    : 0;
+    shadowBlur(30);
+    fS('#1cb');
+    c.fillRect(x, y, 74, 54);
   },
   drawBackground = () => {
     shadowBlur(0);
-    c.fillStyle = '#ccc';
+    fS('#ccc');
     c.fillRect(0, 0, GW, GH);
   },
   drawText = t => {
     shadowBlur(2);
     c.font = 'bold 30px Impact';
-    c.fillStyle = '#fff';
+    fS('#fff');
     c.fillText(t, GW/2.5, GH/2);
   },
   drawScore = () => {
-    c.fillStyle = '#fff';
+    fS('#fff');
     c.fillText(score, 5, 30);
   },
   shadowBlur = blur => c.shadowBlur = blur,
@@ -97,15 +93,12 @@ let GW = 1050,
       canStart = 1;
       explosionLoop()
     } else {
-      player.update(timeDiff);
+      updatePlayer();
       requestAnimationFrame(gameLoop);
     }
   },
   updateEnemies = () => enemies.forEach((e, i) => e.y > GH ? enemies.splice(i,1) : e.update(timeDiff)),
   addEnemy = () => enemies.push(new Enemy(m.floor(r() * (GW - EW + 1)), score));
-
-  a.width = GW;
-  a.height = GH;
 
 function Explosion() {
   circles = [];
@@ -118,7 +111,7 @@ function Explosion() {
   		let circ = circles[i];
   		c.beginPath();
       c.arc(circ.x, circ.y, circ.radius, 0, m.PI*2, false);
-      c.fillStyle = `rgba(${circ.r}, ${circ.g}, ${circ.b}, 0.9)`;
+      fS(`rgba(${circ.r}, ${circ.g}, ${circ.b}, 0.9)`);
   		c.fill();
   		circ.x += circ.vx;
   		circ.y += circ.vy;
@@ -128,7 +121,6 @@ function Explosion() {
   	}
   }
 }
-
 function Enemy(xPos, diff) {
   this.x = xPos;
   this.y = -EH;
@@ -136,15 +128,15 @@ function Enemy(xPos, diff) {
   this.update = function(timeDiff) {
     this.y = this.y + timeDiff * this.speed;
     shadowBlur(30);
-    c.shadowColor = "#000";
-    c.fillStyle = '#d01';
+    fS('#d01');
     c.fillRect(this.x, this.y, EW, EH);
   }
 }
-
 onkeydown = ({which:w}) => w == 13 && canStart ? start() : k[w]=1;
 onkeyup = x => k[x.which]=0;
-
+a.width = GW;
+a.height = GH;
+c.shadowColor = "#000";
 drawBackground();
-player.update();
+updatePlayer();
 drawText('Press Enter');

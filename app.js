@@ -1,5 +1,4 @@
-
-const GW = 1050,
+let GW = 1050,
   GH = 800,
   EW = 75,
   EH = 156,
@@ -8,119 +7,111 @@ const GW = 1050,
   PH = 54,
   PS = 0.75,
   r = Math.random,
-  ro = Math.round;
+  ro = Math.round,
+  i;
 
+  a.width = GW;
+  a.height = GH;
 
-a.width = GW;
-a.height = GH;
-
-class Circle {
-  constructor(loc) {
-    this.x = loc.x + PW/2;
-    this.y = loc.y + PH/2;
-  	this.radius = 2 + r()*5;
-  	this.vx = -5 + r()*10;
-  	this.vy = -5 + r()*10;
-  	this.r = ro(r())*255;
-  	this.g = ro(r())*255;
-  	this.b = ro(r())*255;
-  }
+function Circle(loc) {
+  this.x = loc.x + PW/2;
+  this.y = loc.y + PH/2;
+  this.radius = 2 + r()*5;
+  this.vx = -5 + r()*10;
+  this.vy = -5 + r()*10;
+  this.r = ro(r())*255;
+  this.g = ro(r())*255;
+  this.b = ro(r())*255;
 }
 
-class Explosion {
-  constructor(loc, ctx) {
-    this.ctx = ctx;
-    this.circles = [];
-    this.loc = loc;
-    for (let i = 0; i < 1000; i++) {
-    	this.circles.push(new Circle(loc));
-    }
+function Explosion(loc) {
+  this.circles = [];
+  this.loc = loc;
+  for (i = 0; i < 1000; i++) {
+    this.circles.push(new Circle(loc));
   }
-  render() {
-    this.ctx.shadowBlur = 2;
-  	for (let j = 0; j < this.circles.length; j++){
-  		let c = this.circles[j];
-  		this.ctx.beginPath();
-  		this.ctx.arc(c.x, c.y, c.radius, 0, Math.PI*2, false);
-      this.ctx.fillStyle = "rgba("+c.r+", "+c.g+", "+c.b+", 0.9)";
-  		this.ctx.fill();
+  this.render = function() {
+    shadowBlur(2);
+  	for (i = 0; i < this.circles.length; i++){
+  		let c = this.circles[i];
+  		c.beginPath();
+  		c.arc(c.x, c.y, c.radius, 0, Math.PI*2, false);
+      c.fillStyle = "rgba("+c.r+", "+c.g+", "+c.b+", 0.9)";
+  		c.fill();
   		c.x += c.vx;
   		c.y += c.vy;
   		c.radius -= .02;
   		if(c.radius < 2 + r()* 0.1) {
         (r() < 0.05)
-        ? this.circles[j] = new Circle(this.loc)
-        : this.circles.splice(j, 1)
+        ? this.circles[i] = new Circle(this.loc)
+        : this.circles.splice(i, 1)
       }
   	}
   }
 }
 
-class Enemy {
-  constructor(xPos, difficulty, ctx) {
-    this.difficulty = difficulty;
-    this.x = xPos;
-    this.y = -EH;
-    this.color = 'red';
-    this.ctx = ctx;
-    this.speed = (r() + 0.1) + this.difficulty/10000;
-  }
-  update(timeDiff) {
+function Enemy(xPos, diff) {
+  this.diff = diff;
+  this.x = xPos;
+  this.y = -EH;
+  this.speed = (r() + 0.1) + diff/10000;
+  this.update = function(timeDiff) {
     this.y = this.y + timeDiff * this.speed;
-    this.ctx.shadowBlur = 30;
-    this.ctx.shadowColor = "black";
-    this.ctx.fillStyle = this.color;
-    this.ctx.fillRect(this.x, this.y, EW, EH);
+    shadowBlur(30);
+    c.shadowColor = "black";
+    c.fillStyle = 'red';
+    c.fillRect(this.x, this.y, EW, EH);
   }
 }
-
 
 let enemies = [],
   score = 0,
   currentFrame,
   lastFrame = Date.now(),
   timeDiff,
-  ctx = a.getContext('2d'),
   canStart = 1,
   explosion,
   player = {
     x: 5 * PW,
     y: GH - PH - 10,
     v:[0, 0, 0, 0],
-    color: 'green',
     update: function() {
-      let d = ([...this.v].reverse().findIndex(v => v!==0) !== this.v.findIndex(v => v!== 0)) ? 0.77 : 1;
-      if (this.v[1] && this.x < GW - PW)
-        this.x = this.x + (timeDiff*this.v[1]*PS * d);
-      if (this.v[3] && this.x > 0)
-        this.x = this.x - (timeDiff*this.v[3]*PS * d);
-      if (this.v[0] && this.y > 0 + 10)
-        this.y = this.y - (timeDiff*this.v[0]*PS * d);
-      if (this.v[2] && this.y < GH - PH - 20)
-        this.y = this.y + (timeDiff*this.v[2]*PS * d);
-      ctx.shadowBlur = 30;
-      ctx.shadowColor = "black";
-      ctx.fillStyle = this.color;
-      ctx.fillRect(this.x, this.y, PW, PH);
+      let { x, y, v } = this;
+      let d = v.reduce((acc, z) => z+acc) > 1 ? 0.77 : 1;
+      (v[1] && x < GW - PW)
+      ? this.x = x + (timeDiff*v[1]*PS * d)
+      : (v[3] && x > 0)
+      ? this.x = x - (timeDiff*v[3]*PS * d)
+      : 0;
+      (v[0] && y > 0 + 10)
+      ? this.y = y - (timeDiff*v[0]*PS * d)
+      : (v[2] && y < GH - PH - 20)
+      ? this.y = y + (timeDiff*v[2]*PS * d)
+      : 0;
+      shadowBlur(30);
+      c.shadowColor = "black";
+      c.fillStyle = 'green';
+      c.fillRect(x, y, PW, PH);
     }
   },
   drawBackground = () => {
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = 'lightgrey';
-    ctx.fillRect(0, 0, GW, GH);
+    shadowBlur(0);
+    c.fillStyle = 'lightgrey';
+    c.fillRect(0, 0, GW, GH);
   },
   drawText = t => {
-    ctx.shadowBlur = 2;
-    ctx.font = 'bold 30px Impact';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(t, GW/2.5, GH/2);
+    shadowBlur(2);
+    c.font = 'bold 30px Impact';
+    c.fillStyle = '#fff';
+    c.fillText(t, GW/2.5, GH/2);
   },
   drawScore = () => {
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(score, 5, 30);
+    c.fillStyle = '#fff';
+    c.fillText(score, 5, 30);
   },
+  shadowBlur = blur => c.shadowBlur = blur,
   isPlayerDead = () => {
-    for (let i = 0; i < enemies.length; i++) {
+    for (i = 0; i < enemies.length; i++) {
       if (enemies[i]
         && enemies[i].x < player.x + PW - 0.2 * PW
         && enemies[i].x + EW > player.x + 0.2 * PW
@@ -161,7 +152,7 @@ let enemies = [],
     lastFrame = Date.now();
     drawScore();
     if (isPlayerDead()) {
-      explosion = new Explosion({ x: player.x, y: player.y }, ctx);
+      explosion = new Explosion({ x: player.x, y: player.y }, c);
       canStart = 1;
       explosionLoop()
     } else {
@@ -170,11 +161,11 @@ let enemies = [],
     }
   },
   updateEnemies = () => enemies.forEach((e, id) => e.y > GH ? delete enemies[id] : e.update(timeDiff)),
-  addEnemy = () => enemies.push(new Enemy(Math.floor(r() * (GW - EW + 1)), score, ctx));
+  addEnemy = () => enemies.push(new Enemy(Math.floor(r() * (GW - EW + 1)), score, c));
 
 onkeydown = ({ keyCode: k }) => {
-  let a = k==38? 0 : k==39? 1 : k==40? 2 : k==37? 3 : -1;
-  a > -1 ? player.v[a] = 1 : 0;
+  let aa = k==38? 0 : k==39? 1 : k==40? 2 : k==37? 3 : -1;
+  aa > -1 ? player.v[aa] = 1 : 0;
 };
 
 onkeypress = ({ keyCode: k }) => {

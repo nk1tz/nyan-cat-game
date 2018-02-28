@@ -2,13 +2,11 @@ let
   m = Math,
   r = m.random,
   ro = m.round,
-  circles,
-  enemies = [],
-  score = 0,
+  enemies = circles = [],
+  score = x = y = 0,
   canStart = 1,
   k = [0],
-  x,
-  y,
+  s = 0.5,
   Enemy = () => ({
     x: m.floor(r()*(1006)),
     y:-156,
@@ -20,63 +18,48 @@ let
     }
   }),
   shadowBlur = blur => c.shadowBlur = blur,
-  updateExplosion = () => {
-    shadowBlur(0);
-    for (i = 0; i < circles.length; i++){
-      let q = circles[i];
-      c.beginPath();
-      c.arc(q.x, q.y, q.radius, 0, m.PI*2, false);
-      fS(`rgba(${q.r}, ${q.g}, ${q.b}, 0.9)`);
-      c.fill();
-      q.x += q.vx;
-      q.y += q.vy;
-      q.radius -= .02;
-      if(q.radius < 2 + r()*0.1) r() < 0.05 ? circles[i] = Circle(x,y) : circles.splice(i, 1);
-    };
-    drawText('GAME OVER - press enter');
-  },
   fS = o => c.fillStyle = o,
-  Circle = () => ({
-    x: x + 37,
-    y: y + 27,
-    radius: 2 + r()*5,
-    vx: -5 + r()*10,
-    vy: -5 + r()*10,
-    r: ro(r())*255,
-    g: ro(r())*255,
-    b: ro(r())*255,
-  }),
+  Circle = () => [
+    x + 37,
+    y + 27,
+    2 + r()*5,
+    -5 + r()*10,
+    -5 + r()*10,
+    ro(r())*255,
+    ro(r())*255,
+    ro(r())*255,
+  ],
   drawText = t => {
     shadowBlur(2);
     c.font = 'bold 30px Impact';
     fS('#fff');
     c.fillText(t, 432, 400);
   },
-  drawBackground = () => {
-    fS('#ccc');
-    c.fillRect(0, 0, 1080, 800);
-  },
   start = () => {
+    canStart = score = 0;
     enemies = [];
-    circles = [];
-    canStart = 0;
-    score = 0;
     x = 370;
     y = 680,
     gameLoop();
   },
   gameLoop = () => {
-    !canStart? (()=>{
+    if(!canStart) {
       score += 1;
-      drawBackground();
+
+      // set background
+      fS('#ccc');
+      c.fillRect(0, 0, 1080, 800);
+
+      // fill enemies
       !enemies[8] ? enemies.push(Enemy()) : 0;
 
-      let s = (k.reduce((acc, z) => z+acc) > 1 ? 0.4 : 0.5);
+      // change the player's coords
       (k[39] && x < 1006) ? x+=s: (k[37] && x > 0) ? x-=s : 0;
       (k[38] && y > 10) ? y-=s : (k[40] && y < 726) ? y+=s : 0;
       fS('#1cb');
       c.fillRect(x, y, 74, 54);
 
+      // detect collision
       if(enemies.some(e =>
         e.x < x + 60 &&
         e.x + 75 > x + 14 &&
@@ -86,7 +69,21 @@ let
         circles = [...Array(700)].map(Circle);
         canStart = 1;
       }
-    })() : updateExplosion();
+    } else {
+      shadowBlur(0);
+      for (i = 0; i < circles.length; i++){
+        let q = circles[i];
+        c.beginPath();
+        c.arc(q[0], q[1], q[2], 0, m.PI*2, false);
+        fS(`rgba(${q[5]}, ${q[6]}, ${q[7]}, 0.9)`);
+        c.fill();
+        q[0] += q[3];
+        q[1] += q[4];
+        q[2] -= .02;
+        if(q[2] < 2 + r()*0.1) r() < 0.05 ? circles[i] = Circle(x,y) : circles.splice(i, 1);
+      };
+      drawText('GAME OVER - press enter');
+    }
     shadowBlur(30);
     enemies.forEach((e, i) => e.y > 800 ? enemies.splice(i,1) : e.update());
     fS('#fff');
@@ -100,6 +97,7 @@ a.height = 800;
 a.width= 1080;
 c.shadowColor = "#000";
 
-drawBackground();
 drawText('Press Enter');
+
+
 

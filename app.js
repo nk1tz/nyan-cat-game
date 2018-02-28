@@ -8,63 +8,17 @@ let GW = 1050,
   PS = 0.75,
   r = Math.random,
   ro = Math.round,
-  i;
-
-  a.width = GW;
-  a.height = GH;
-
-  const Circle = loc => ({
-    x: loc.x + PW/2,
-    y: loc.y + PH/2,
+  Circle = (x,y) => ({
+    x: x + PW/2,
+    y: y + PH/2,
     radius: 2 + r()*5,
     vx: -5 + r()*10,
     vy: -5 + r()*10,
     r: ro(r())*255,
     g: ro(r())*255,
     b: ro(r())*255,
-  })
-
-function Explosion(loc) {
-  this.circles = [];
-  this.loc = loc;
-  for (i = 0; i < 1000; i++) {
-    this.circles.push(Circle(loc));
-  }
-  this.render = function() {
-    shadowBlur(2);
-  	for (i = 0; i < this.circles.length; i++){
-  		let circ = this.circles[i];
-  		c.beginPath();
-  		c.arc(circ.x, circ.y, circ.radius, 0, Math.PI*2, false);
-      c.fillStyle = "rgba("+circ.r+", "+circ.g+", "+circ.b+", 0.9)";
-  		c.fill();
-  		circ.x += circ.vx;
-  		circ.y += circ.vy;
-  		circ.radius -= .02;
-  		if(circ.radius < 2 + r()* 0.1) {
-        (r() < 0.05)
-        ? this.circles[i] = Circle(this.loc)
-        : this.circles.splice(i, 1)
-      }
-  	}
-  }
-}
-
-function Enemy(xPos, diff) {
-  this.diff = diff;
-  this.x = xPos;
-  this.y = -EH;
-  this.speed = (r() + 0.1) + diff/10000;
-  this.update = function(timeDiff) {
-    this.y = this.y + timeDiff * this.speed;
-    shadowBlur(30);
-    c.shadowColor = "#000";
-    c.fillStyle = '#d01';
-    c.fillRect(this.x, this.y, EW, EH);
-  }
-}
-
-let enemies = [],
+  }),
+  enemies = [],
   score = 0,
   currentFrame,
   lastFrame = Date.now(),
@@ -137,12 +91,12 @@ let enemies = [],
     updateTimeDiff();
     score += ro(timeDiff/10);
     drawBackground();
-    while (enemies.length < ME) {addEnemy()};
+    while (!enemies[ME-1]) addEnemy();
     updateEnemies();
     lastFrame = Date.now();
     drawScore();
     if (isPlayerDead()) {
-      explosion = new Explosion({ x: player.x, y: player.y });
+      explosion = new Explosion(player);
       canStart = 1;
       explosionLoop()
     } else {
@@ -150,19 +104,57 @@ let enemies = [],
       requestAnimationFrame(gameLoop);
     }
   },
-  updateEnemies = () => enemies.forEach((e, id) => e.y > GH ? enemies.splice(id,1) : e.update(timeDiff)),
+  updateEnemies = () => enemies.forEach((e, i) => e.y > GH ? enemies.splice(i,1) : e.update(timeDiff)),
   addEnemy = () => enemies.push(new Enemy(Math.floor(r() * (GW - EW + 1)), score));
+
+  a.width = GW;
+  a.height = GH;
+
+function Explosion({x,y}) {
+  circles = [];
+  for (i = 0; i < 1000; i++) {
+    circles.push(Circle(x,y));
+  }
+  this.render = () => {
+    shadowBlur(2);
+  	for (i = 0; i < circles.length; i++){
+  		let circ = circles[i];
+  		c.beginPath();
+      c.arc(circ.x, circ.y, circ.radius, 0, Math.PI*2, false);
+      c.fillStyle = `rgba(${circ.r}, ${circ.g}, ${circ.b}, 0.9)`;
+  		c.fill();
+  		circ.x += circ.vx;
+  		circ.y += circ.vy;
+  		circ.radius -= .02;
+  		if(circ.radius < 2 + r()* 0.1)
+        r() < 0.05 ? circles[i] = Circle(x,y) : circles.splice(i, 1)
+  	}
+  }
+}
+
+function Enemy(xPos, diff) {
+  this.x = xPos;
+  this.y = -EH;
+  this.speed = (r() + 0.1) + diff/10000;
+  this.update = function(timeDiff) {
+    this.y = this.y + timeDiff * this.speed;
+    shadowBlur(30);
+    c.shadowColor = "#000";
+    c.fillStyle = '#d01';
+    c.fillRect(this.x, this.y, EW, EH);
+  }
+}
 
 onkeydown = ({ keyCode: k }) => {
   k == 13 && canStart && start();
-  let dir = k==38? 0 : k==39? 1 : k==40? 2 : k==37? 3 : -1;
+  dir = k==38? 0 : k==39? 1 : k==40? 2 : k==37? 3 : -1;
   dir > -1 ? player.v[dir] = 1 : 0;
-};
+}
 
 onkeyup = ({ keyCode: k }) => {
-  let dir = k==38? 0 : k==39? 1 : k==40? 2 : k==37? 3 : -1;
+  dir = k==38? 0 : k==39? 1 : k==40? 2 : k==37? 3 : -1;
   dir > -1 ? player.v[dir] = 0 : 0;
-};
+}
 
 drawBackground();
 player.update();

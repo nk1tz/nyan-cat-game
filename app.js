@@ -26,7 +26,7 @@ let GW = 1050,
   x = 370,
   y = GH - 64,
   updatePlayer = () => {
-    s = timeDiff*(k.reduce((acc, z) => z+acc) > 1 ? 0.58 : 0.77);
+    let s = timeDiff*(k.reduce((acc, z) => z+acc) > 1 ? 0.58 : 0.77);
     (k[39] && x < GW - 74)
     ? x += s
     : (k[37] && x > 0)
@@ -101,7 +101,7 @@ let GW = 1050,
   addEnemy = () => enemies.push(new Enemy(m.floor(r() * (GW - EW + 1)), score));
 
 function Explosion() {
-  circles = [];
+  let circles = [];
   for (i = 0; i < 1000; i++) {
     circles.push(Circle(x,y));
   }

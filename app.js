@@ -2,15 +2,13 @@ let GW = 1050,
   GH = 800,
   EW = 75,
   EH = 156,
-  ME = 9,
-  PW = 75,
-  PH = 54,
   PS = 0.75,
-  r = Math.random,
-  ro = Math.round,
+  m = Math,
+  r = m.random,
+  ro = m.round,
   Circle = (x,y) => ({
-    x: x + PW/2,
-    y: y + PH/2,
+    x: x + 74/2,
+    y: y + 54/2,
     radius: 2 + r()*5,
     vx: -5 + r()*10,
     vy: -5 + r()*10,
@@ -20,32 +18,31 @@ let GW = 1050,
   }),
   enemies = [],
   score = 0,
-  currentFrame,
-  lastFrame = Date.now(),
+  date = Date.now,
+  lastFrame = date(),
   timeDiff,
   canStart = 1,
-  explosion,
+  k = [0],
+  x = 370,
+  y = GH - 64,
   player = {
-    x: 5 * PW,
-    y: GH - PH - 10,
-    v:[0, 0, 0, 0],
     update: function() {
-      let { x, y, v } = this;
-      let d = v.reduce((acc, z) => z+acc) > 1 ? 1 : 1;
-      (v[1] && x < GW - PW)
-      ? this.x += (timeDiff*PS * d)
-      : (v[3] && x > 0)
-      ? this.x -= (timeDiff*PS * d)
+      d = k.reduce((acc, z) => z+acc) > 1 ? 0.77 : 1;
+      console.log(d);
+      (k[39] && x < GW - 74)
+      ? x += (timeDiff*PS * d)
+      : (k[37] && x > 0)
+      ? x -= (timeDiff*PS * d)
       : 0;
-      (v[0] && y > 0 + 10)
-      ? this.y -= (timeDiff*PS * d)
-      : (v[2] && y < GH - PH - 20)
-      ? this.y += (timeDiff*PS * d)
+      (k[38] && y > 10)
+      ? y -= (timeDiff*PS * d)
+      : (k[40] && y < GH - 74)
+      ? y += (timeDiff*PS * d)
       : 0;
       shadowBlur(30);
       c.shadowColor = "#000";
       c.fillStyle = '#1cb';
-      c.fillRect(x, y, PW, PH);
+      c.fillRect(x, y, 74, 54);
     }
   },
   drawBackground = () => {
@@ -65,38 +62,38 @@ let GW = 1050,
   },
   shadowBlur = blur => c.shadowBlur = blur,
   isPlayerDead = () => enemies.some(e =>
-    e.x < player.x + PW - 0.2 * PW &&
-    e.x + EW > player.x + 0.2 * PW &&
-    e.y + EH*0.8 > player.y &&
-    e.y + EH*0.5 < player.y + PH
+    e.x < x + 60 &&
+    e.x + EW > x + 14 &&
+    e.y + EH*0.8 > y &&
+    e.y + EH*0.5 < y + 54
   ),
   start = () => {
     enemies = [];
     canStart = 0;
     score = 0;
-    lastFrame = Date.now();
+    lastFrame = date();
     gameLoop();
   },
-  updateTimeDiff = () => timeDiff = Date.now() - lastFrame,
+  updateTimeDiff = () => timeDiff = date() - lastFrame,
   explosionLoop = () => {
     updateTimeDiff();
     updateEnemies();
     explosion.render();
     drawText('GAME OVER - press enter');
     drawScore();
-    lastFrame = Date.now();
+    lastFrame = date();
     canStart ? requestAnimationFrame(explosionLoop) : 0;
   },
   gameLoop = () => {
     updateTimeDiff();
     score += ro(timeDiff/10);
     drawBackground();
-    while (!enemies[ME-1]) addEnemy();
+    if (!enemies[8]) addEnemy();
     updateEnemies();
-    lastFrame = Date.now();
+    lastFrame = date();
     drawScore();
     if (isPlayerDead()) {
-      explosion = new Explosion(player);
+      explosion = new Explosion;
       canStart = 1;
       explosionLoop()
     } else {
@@ -105,12 +102,12 @@ let GW = 1050,
     }
   },
   updateEnemies = () => enemies.forEach((e, i) => e.y > GH ? enemies.splice(i,1) : e.update(timeDiff)),
-  addEnemy = () => enemies.push(new Enemy(Math.floor(r() * (GW - EW + 1)), score));
+  addEnemy = () => enemies.push(new Enemy(m.floor(r() * (GW - EW + 1)), score));
 
   a.width = GW;
   a.height = GH;
 
-function Explosion({x,y}) {
+function Explosion() {
   circles = [];
   for (i = 0; i < 1000; i++) {
     circles.push(Circle(x,y));
@@ -120,7 +117,7 @@ function Explosion({x,y}) {
   	for (i = 0; i < circles.length; i++){
   		let circ = circles[i];
   		c.beginPath();
-      c.arc(circ.x, circ.y, circ.radius, 0, Math.PI*2, false);
+      c.arc(circ.x, circ.y, circ.radius, 0, m.PI*2, false);
       c.fillStyle = `rgba(${circ.r}, ${circ.g}, ${circ.b}, 0.9)`;
   		c.fill();
   		circ.x += circ.vx;
@@ -145,16 +142,8 @@ function Enemy(xPos, diff) {
   }
 }
 
-onkeydown = ({ keyCode: k }) => {
-  k == 13 && canStart && start();
-  dir = k==38? 0 : k==39? 1 : k==40? 2 : k==37? 3 : -1;
-  dir > -1 ? player.v[dir] = 1 : 0;
-}
-
-onkeyup = ({ keyCode: k }) => {
-  dir = k==38? 0 : k==39? 1 : k==40? 2 : k==37? 3 : -1;
-  dir > -1 ? player.v[dir] = 0 : 0;
-}
+onkeydown = ({which:w}) => w == 13 && canStart ? start() : k[w]=1;
+onkeyup = x => k[x.which]=0;
 
 drawBackground();
 player.update();

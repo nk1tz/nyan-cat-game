@@ -1,48 +1,44 @@
-let GW = 1050,
-  GH = 800,
-  EW = 75,
-  EH = 156,
+let
   m = Math,
   r = m.random,
   ro = m.round,
   circles,
-  Enemy = () => ({
-    x: m.floor(r()*(GW-EW+1)),
-    y:-EH,
-    speed: (r() + 0.1) + score/10000,
-    update: function(){
-      this.y = this.y + timeDiff * this.speed;
-      fS('#d01');
-      c.fillRect(this.x, this.y, EW, EH);
-    }
-  }),
-  updateExplosion = () => {
-    for (i = 0; i < circles.length; i++){
-      let circ = circles[i];
-      c.beginPath();
-      c.arc(circ.x, circ.y, circ.radius, 0, m.PI*2, false);
-      fS(`rgba(${circ.r}, ${circ.g}, ${circ.b}, 0.9)`);
-      c.fill();
-      circ.x += circ.vx;
-      circ.y += circ.vy;
-      circ.radius -= .02;
-      if(circ.radius < 2 + r()* 0.1)
-        r() < 0.05 ? circles[i] = Circle(x,y) : circles.splice(i, 1)
-    }
-  },
-  fS = o => c.fillStyle = o,
   enemies = [],
   score = 0,
-  date = Date.now,
-  lastFrame = date(),
-  timeDiff,
   canStart = 1,
   k = [0],
-  x = 370,
-  y = GH - 64,
+  x,
+  y,
+  Enemy = () => ({
+    x: m.floor(r()*(1006)),
+    y:-156,
+    speed: (r() + 0.1)/5 + score/1e5,
+    update: function(){
+      this.y = this.y + this.speed;
+      fS('#d01');
+      c.fillRect(this.x, this.y, 75, 156);
+    }
+  }),
+  shadowBlur = blur => c.shadowBlur = blur,
+  updateExplosion = () => {
+    shadowBlur(0);
+    for (i = 0; i < circles.length; i++){
+      let q = circles[i];
+      c.beginPath();
+      c.arc(q.x, q.y, q.radius, 0, m.PI*2, false);
+      fS(`rgba(${q.r}, ${q.g}, ${q.b}, 0.9)`);
+      c.fill();
+      q.x += q.vx;
+      q.y += q.vy;
+      q.radius -= .02;
+      if(q.radius < 2 + r()*0.1) r() < 0.05 ? circles[i] = Circle(x,y) : circles.splice(i, 1);
+    };
+    drawText('GAME OVER - press enter');
+  },
+  fS = o => c.fillStyle = o,
   Circle = () => ({
-    x: x + 74/2,
-    y: y + 54/2,
+    x: x + 37,
+    y: y + 27,
     radius: 2 + r()*5,
     vx: -5 + r()*10,
     vy: -5 + r()*10,
@@ -50,79 +46,60 @@ let GW = 1050,
     g: ro(r())*255,
     b: ro(r())*255,
   }),
-  updatePlayer = () => {
-    let s = timeDiff*(k.reduce((acc, z) => z+acc) > 1 ? 0.58 : 0.77);
-    (k[39] && x < GW - 74)
-    ? x += s
-    : (k[37] && x > 0)
-    ? x -= s
-    : 0;
-    (k[38] && y > 10)
-    ? y -= s
-    : (k[40] && y < GH - 74)
-    ? y += s
-    : 0;
-    fS('#1cb');
-    c.fillRect(x, y, 74, 54);
-  },
-  drawBackground = () => {
-    fS('#ccc');
-    c.fillRect(0, 0, GW, GH);
-  },
   drawText = t => {
     shadowBlur(2);
     c.font = 'bold 30px Impact';
     fS('#fff');
-    c.fillText(t, GW/2.5, GH/2);
+    c.fillText(t, 432, 400);
   },
-  drawScore = () => {
-    fS('#fff');
-    c.fillText(score, 5, 30);
+  drawBackground = () => {
+    fS('#ccc');
+    c.fillRect(0, 0, 1080, 800);
   },
-  shadowBlur = blur => c.shadowBlur = blur,
-  isPlayerDead = () => enemies.some(e =>
-    e.x < x + 60 &&
-    e.x + EW > x + 14 &&
-    e.y + EH*0.8 > y &&
-    e.y + EH*0.5 < y + 54
-  ),
   start = () => {
     enemies = [];
     circles = [];
     canStart = 0;
     score = 0;
+    x = 370;
+    y = 680,
     gameLoop();
   },
-  updateTimeDiff = () => timeDiff = date() - lastFrame,
   gameLoop = () => {
-    updateTimeDiff();
-    if (!canStart) {
-      score += ro(timeDiff/10);
+    !canStart? (()=>{
+      score += 1;
       drawBackground();
-      if (!enemies[8]) addEnemy();
-      updatePlayer();
-      if (isPlayerDead()) {
-        circles = Array(700).fill().map(z=>Circle());
+      !enemies[8] ? enemies.push(Enemy()) : 0;
+
+      let s = (k.reduce((acc, z) => z+acc) > 1 ? 0.4 : 0.5);
+      (k[39] && x < 1006) ? x+=s: (k[37] && x > 0) ? x-=s : 0;
+      (k[38] && y > 10) ? y-=s : (k[40] && y < 726) ? y+=s : 0;
+      fS('#1cb');
+      c.fillRect(x, y, 74, 54);
+
+      if(enemies.some(e =>
+        e.x < x + 60 &&
+        e.x + 75 > x + 14 &&
+        e.y + 124 > y &&
+        e.y + 78 < y + 54
+      )) {
+        circles = [...Array(700)].map(Circle);
         canStart = 1;
       }
-    } else {
-      shadowBlur(0);
-      updateExplosion();
-      drawText('GAME OVER - press enter');
-    }
+    })() : updateExplosion();
     shadowBlur(30);
-    updateEnemies();
-    drawScore();
-    lastFrame = date();
-    requestAnimationFrame(gameLoop);
-  },
-  updateEnemies = () => enemies.forEach((e, i) => e.y > GH ? enemies.splice(i,1) : e.update()),
-  addEnemy = () => enemies.push(Enemy());
+    enemies.forEach((e, i) => e.y > 800 ? enemies.splice(i,1) : e.update());
+    fS('#fff');
+    c.fillText(ro(score/10), 5, 30);
+    setInterval(gameLoop,50)
+  };
+
 onkeydown = ({which:w}) => w == 13 && canStart ? start() : k[w]=1;
 onkeyup = x => k[x.which]=0;
-a.width = GW;
-a.height = GH;
+a.height = 800;
+a.width= 1080;
 c.shadowColor = "#000";
+
 drawBackground();
-updatePlayer();
 drawText('Press Enter');
+

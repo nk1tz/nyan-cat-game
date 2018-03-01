@@ -1,14 +1,14 @@
 let
   m = Math,
   r = m.random,
-  ro = m.round,
   enemies = circles = [],
   score = x = y = 0,
   canStart = 1,
   k = [0],
   s = 0.5,
+  fS = o => c.fillStyle = o,
   Enemy = () => ({
-    x: m.floor(r()*(1006)),
+    x: m.floor(r()*(1e3)),
     y:-156,
     speed: (r() + 0.1)/5 + score/1e5,
     update: function(){
@@ -18,16 +18,15 @@ let
     }
   }),
   shadowBlur = blur => c.shadowBlur = blur,
-  fS = o => c.fillStyle = o,
   Circle = () => [
     x + 37,
     y + 27,
     2 + r()*5,
     -5 + r()*10,
     -5 + r()*10,
-    ro(r())*255,
-    ro(r())*255,
-    ro(r())*255,
+    r()*255|0,
+    r()*255|0,
+    r()*255|0,
   ],
   drawText = t => {
     shadowBlur(2);
@@ -66,7 +65,7 @@ let
         e.y + 124 > y &&
         e.y + 78 < y + 54
       )) {
-        circles = [...Array(700)].map(Circle);
+        circles = [...Array(900)].map(Circle);
         canStart = 1;
       }
     } else {
@@ -82,12 +81,12 @@ let
         q[2] -= .02;
         if(q[2] < 2 + r()*0.1) r() < 0.05 ? circles[i] = Circle(x,y) : circles.splice(i, 1);
       };
-      drawText('GAME OVER - press enter');
+      drawText('GAME OVER - Enter');
     }
     shadowBlur(30);
     enemies.forEach((e, i) => e.y > 800 ? enemies.splice(i,1) : e.update());
     fS('#fff');
-    c.fillText(ro(score/10), 5, 30);
+    c.fillText(score/10|0, 5, 30);
     setInterval(gameLoop,50)
   };
 
